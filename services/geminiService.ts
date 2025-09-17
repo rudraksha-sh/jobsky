@@ -1,125 +1,117 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { CareerAdvisorResponse, Language } from '../types';
+import type { CareerAdvisorResponse } from '../types';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable is not set.");
+// FIX: Initialize the GoogleGenAI client as per the guidelines.
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+    throw new Error("API_KEY environment variable is not set");
 }
+const ai = new GoogleGenAI({ apiKey });
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
+// FIX: Define the response schema to ensure structured JSON output from the Gemini API.
 const responseSchema = {
-  type: Type.OBJECT,
-  properties: {
-    skills_detected: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-      description: "List of skills detected from resume and user input."
-    },
-    career_suggestions: {
-      type: Type.ARRAY,
-      description: "A list of 2-3 detailed career suggestions.",
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          career: {
-            type: Type.STRING,
-            description: "The name of the career path."
-          },
-          matched_skills: {
+    type: Type.OBJECT,
+    properties: {
+        skills_detected: {
             type: Type.ARRAY,
             items: { type: Type.STRING },
-            description: "Skills the user already has for this career."
-          },
-          missing_skills: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "Critical skills the user needs to learn for this career."
-          },
-          roadmap: {
-            type: Type.ARRAY,
-            description: "A 3-4 step plan to acquire the missing skills.",
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                step: {
-                  type: Type.STRING,
-                  description: "A clear, actionable step."
-                },
-                resources: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING },
-                  description: "A list of free/affordable online resources (e.g., YouTube, Coursera links) for this step."
-                }
-              },
-              required: ["step", "resources"]
-            }
-          }
+            description: "List of skills detected from the user's input."
         },
-        required: ["career", "matched_skills", "missing_skills", "roadmap"]
-      }
+        career_suggestions: {
+            type: Type.ARRAY,
+            description: "A list of 2-3 career suggestions.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    career: { type: Type.STRING, description: "The name of the career path." },
+                    matched_skills: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING },
+                        description: "List of the user's skills that match this career."
+                    },
+                    missing_skills: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING },
+                        description: "List of skills the user needs to learn for this career."
+                    },
+                    roadmap: {
+                        type: Type.ARRAY,
+                        description: "A step-by-step plan to achieve this career.",
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                step: { type: Type.STRING, description: "A summary of the roadmap step." },
+                                resources: {
+                                    type: Type.ARRAY,
+                                    items: { type: Type.STRING },
+                                    description: "A list of 2-3 specific, actionable resources for this step (e.g., online courses, books, projects)."
+                                }
+                            },
+                            required: ["step", "resources"]
+                        }
+                    }
+                },
+                required: ["career", "matched_skills", "missing_skills", "roadmap"]
+            }
+        },
+        extra_recommendations: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: "General career advice or other recommendations."
+        },
+        language_used: {
+            type: Type.STRING,
+            enum: ['english', 'hindi'],
+            description: "The language detected in the user's prompt ('english' or 'hindi')."
+        }
     },
-    extra_recommendations: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-      description: "General, actionable advice like building projects or contributing to open-source."
-    },
-    language_used: {
-      type: Type.STRING,
-      description: "The language used in the response, either 'english' or 'hindi'."
-    }
-  },
-  required: ["skills_detected", "career_suggestions", "extra_recommendations", "language_used"]
+    required: ["skills_detected", "career_suggestions", "extra_recommendations", "language_used"]
 };
 
-const systemInstruction = `You are JOBSKY, a world-class AI Career & Skills Advisor. Your goal is to help users discover personalized career paths based on their skills, resume, and goals.
+// FIX: Implement the function to call the Gemini API for career advice.
+export const getCareerAdvice = async (userInput: string): Promise<CareerAdvisorResponse> => {
+    
+    const systemInstruction = `You are "Jobsky", an expert AI career advisor. Your goal is to provide personalized, actionable career guidance based on the user's skills, interests, and background.
 
-You MUST follow these instructions precisely:
-1.  Analyze the provided resume text, LinkedIn profile info, and skills list.
-2.  Identify 2-3 realistic career paths based on current industry demand.
-3.  For each career, create a detailed, step-by-step roadmap.
-4.  The roadmap must include missing skills, recommended courses, and potential projects.
-5.  Include links to free or affordable learning resources (e.g., YouTube, Coursera, official docs, Kaggle).
-6.  If the user requests 'hindi', provide career names and roadmap steps in Hindi, but keep resource links and technical terms (like 'Python', 'Docker') in English.
-7.  Your response MUST be a single, valid JSON object that strictly adheres to the provided schema. Do not add any text, explanations, or markdown formatting before or after the JSON object.
-8.  Be concise, professional, and actionable. Avoid generic motivational text.
-`;
+    Follow these instructions carefully:
+    1.  **Analyze Input:** Carefully parse the user's input to identify their current skills, experience, and career interests.
+    2.  **Detect Skills:** List the key skills you've identified under 'skills_detected'.
+    3.  **Suggest Careers:** Provide 2-3 relevant and specific career suggestions. For each suggestion:
+        -   Clearly state the career title.
+        -   List which of the user's skills are a good match ('matched_skills').
+        -   Identify crucial skills they are missing ('missing_skills').
+        -   Create a practical, step-by-step 'roadmap' with 3-5 steps.
+        -   For each roadmap step, provide 2-3 specific, high-quality learning resources (e.g., "Complete the 'Google Data Analytics Professional Certificate' on Coursera," "Read 'Designing Data-Intensive Applications' by Martin Kleppmann," "Build a portfolio project analyzing a public dataset from Kaggle"). Avoid generic advice.
+    4.  **Extra Recommendations:** Offer 1-2 additional, insightful recommendations. This could be about networking, portfolio building, or emerging trends.
+    5.  **Language Detection:** Identify if the user's prompt is primarily in 'english' or 'hindi' and set the 'language_used' field accordingly.
+    6.  **JSON Output:** You MUST respond with ONLY a valid JSON object that strictly adheres to the provided schema. Do not include any introductory text, markdown formatting (like \`\`\`json), or explanations outside of the JSON structure.`;
 
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: userInput,
+            config: {
+                systemInstruction,
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+                temperature: 0.5,
+            }
+        });
 
-export const generateCareerAdvice = async (
-  resumeText: string,
-  skills: string[],
-  language: Language
-): Promise<CareerAdvisorResponse> => {
-  // A future implementation could also take a LinkedIn URL and use a backend service to scrape and add it to the prompt.
-  const prompt = `
-    Analyze the following information and generate career advice.
+        const jsonText = response.text;
+        
+        if (!jsonText) {
+            throw new Error("API returned an empty response.");
+        }
 
-    - Resume Text: """${resumeText}"""
-    - Additional Skills: ${skills.join(', ')}
-    - Requested Language: ${language}
+        const parsedResponse = JSON.parse(jsonText) as CareerAdvisorResponse;
+        return parsedResponse;
 
-    Generate the response in the specified language and follow all system instructions.
-  `;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema,
-        temperature: 0.5,
-      },
-    });
-
-    const jsonText = response.text.trim();
-    return JSON.parse(jsonText) as CareerAdvisorResponse;
-
-  } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    throw new Error("Failed to generate career advice from Gemini API.");
-  }
+    } catch (error) {
+        console.error("Error calling Gemini API:", error);
+        if (error instanceof Error) {
+            throw new Error(`Failed to get career advice: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred while fetching career advice.");
+    }
 };

@@ -1,57 +1,84 @@
-import React, { useState, useCallback } from 'react';
-import { Navbar } from './components/Navbar';
+import React, { useState } from 'react';
+import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { LandingPage } from './pages/LandingPage';
 import { AdvisorPage } from './pages/AdvisorPage';
-import { Footer } from './components/Footer';
 import { ResumeBuilderPage } from './pages/ResumeBuilderPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { CommunityPage } from './pages/CommunityPage';
 import { PracticePage } from './pages/PracticePage';
 import { MentorshipPage } from './pages/MentorshipPage';
 import { HelpPage } from './pages/HelpPage';
+import { NewsletterPage } from './pages/NewsletterPage';
+import AuthPage from './pages/AuthPage';
 
-export type Page = 'landing' | 'advisor' | 'resume' | 'profile' | 'community' | 'practice' | 'mentorship' | 'help';
+export type Page = 'landing' | 'advisor' | 'resume' | 'practice' | 'community' | 'mentorship' | 'profile' | 'help' | 'newsletter' | 'auth';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<Page>('landing');
+  const [page, setPage] = useState<Page>('landing');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const handleNavigate = useCallback((page: Page) => {
-    setCurrentPage(page);
-    window.scrollTo(0, 0);
-  }, []);
+  const pagesRequiringAuth: Page[] = ['advisor', 'resume', 'practice', 'community', 'mentorship', 'profile'];
+
+  const handleNavigate = (newPage: Page) => {
+    if (pagesRequiringAuth.includes(newPage) && !isLoggedIn) {
+      setPage('auth');
+    } else {
+      setPage(newPage);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    setPage('advisor');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setPage('landing');
+  };
 
   const renderPage = () => {
-    switch (currentPage) {
+    if (pagesRequiringAuth.includes(page) && !isLoggedIn) {
+      return <AuthPage onLogin={handleLogin} onNavigate={handleNavigate} />;
+    }
+
+    switch (page) {
       case 'landing':
         return <LandingPage onNavigate={handleNavigate} />;
       case 'advisor':
         return <AdvisorPage />;
       case 'resume':
         return <ResumeBuilderPage />;
-      case 'profile':
-        return <ProfilePage />;
-      case 'community':
-        return <CommunityPage />;
       case 'practice':
         return <PracticePage />;
+      case 'community':
+        return <CommunityPage />;
       case 'mentorship':
         return <MentorshipPage />;
+      case 'profile':
+        return <ProfilePage />;
       case 'help':
         return <HelpPage />;
+      case 'newsletter':
+        return <NewsletterPage />;
+      case 'auth':
+        return <AuthPage onLogin={handleLogin} onNavigate={handleNavigate} />;
       default:
         return <LandingPage onNavigate={handleNavigate} />;
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-900 font-sans flex flex-col">
-      <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
-      <main className="flex-grow">
+    <div className="flex flex-col min-h-screen bg-gray-900 text-gray-100 font-sans antialiased">
+      <Header page={page} onNavigate={handleNavigate} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      <main className="flex-grow flex flex-col items-center w-full">
         {renderPage()}
       </main>
-      <Footer page={currentPage} />
+      <Footer page={page} />
     </div>
   );
-};
+}
 
 export default App;
