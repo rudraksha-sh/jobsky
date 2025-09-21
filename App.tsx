@@ -58,7 +58,7 @@ const App: React.FC = () => {
       case 'mentorship':
         return <MentorshipPage />;
       case 'profile':
-        return <ProfilePage />;
+        return <ProfilePage onLogout={handleLogout} />;
       case 'help':
         return <HelpPage />;
       case 'newsletter':

@@ -19,3 +19,10 @@ export interface CareerAdvisorResponse {
   extra_recommendations: string[];
   language_used: Language;
 }
+
+// Types for Resume Builder
+export interface ResumeBuilderResponse {
+  summary: string;
+  experience: string[];
+  skills: string[];
+}
