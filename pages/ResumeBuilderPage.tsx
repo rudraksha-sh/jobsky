@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { ResumeInputForm } from '../components/ResumeInputForm';
 import { ResumeDisplay } from '../components/ResumeDisplay';
 import { getResumeAdvice } from '../services/geminiService';
-import type { ResumeBuilderResponse } from '../types';
+import type { ResumeBuilderResponse, UserProfile } from '../types';
 
-export const ResumeBuilderPage: React.FC = () => {
+interface ResumeBuilderPageProps {
+  user: UserProfile | null;
+}
+
+export const ResumeBuilderPage: React.FC<ResumeBuilderPageProps> = ({ user }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<ResumeBuilderResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +89,7 @@ export const ResumeBuilderPage: React.FC = () => {
               &larr; Build Another Resume
             </button>
           </div>
-          <ResumeDisplay results={results} />
+          <ResumeDisplay results={results} user={user} />
         </>
       )}
     </div>

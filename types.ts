@@ -1,4 +1,5 @@
 
+
 export type Language = 'english' | 'hindi';
 
 export interface RoadmapStep {
@@ -25,4 +26,11 @@ export interface ResumeBuilderResponse {
   summary: string;
   experience: string[];
   skills: string[];
+}
+
+// Type for User Profile
+export interface UserProfile {
+  name: string;
+  email: string;
+  picture: string;
 }

@@ -1,11 +1,50 @@
 import React, { useState } from 'react';
 import type { Page } from '../App';
+import type { UserProfile } from '../types';
 import { useGoogleLogin } from '@react-oauth/google';
 
 interface AuthPageProps {
-  onLogin: () => void;
+  onLogin: (profile: UserProfile) => void;
   onNavigate: (page: Page) => void;
 }
+
+// --- Mock User Database using localStorage ---
+
+const MOCK_USER_DB_KEY = 'jobsky_users';
+
+// A real app would hash passwords, but for this simulation, we'll store them as is.
+interface MockUser {
+  email: string;
+  // passwordHash: string; // In a real app
+}
+
+const getUsers = (): MockUser[] => {
+  try {
+    const users = localStorage.getItem(MOCK_USER_DB_KEY);
+    return users ? JSON.parse(users) : [];
+  } catch (error) {
+    console.error("Failed to parse users from localStorage", error);
+    return [];
+  }
+};
+
+const findUser = (email: string): MockUser | undefined => {
+  const users = getUsers();
+  return users.find(user => user.email.toLowerCase() === email.toLowerCase());
+};
+
+const addUser = (email: string): boolean => {
+  if (findUser(email)) {
+    return false; // User already exists
+  }
+  const users = getUsers();
+  users.push({ email });
+  localStorage.setItem(MOCK_USER_DB_KEY, JSON.stringify(users));
+  return true;
+};
+
+
+// --- Component ---
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 48 48">
@@ -25,27 +64,62 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); 
+    setError('');
     
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+        setError("Email cannot be empty.");
+        return;
+    }
+
+    const mockProfile: UserProfile = {
+      name: trimmedEmail.split('@')[0], // Simple name from email
+      email: trimmedEmail,
+      picture: '' // No picture for mock login
+    };
+
     if (isLogin) {
-      console.log('Logging in with:', { email, password });
-      onLogin();
+      // --- SIGN IN LOGIC ---
+      const user = findUser(trimmedEmail);
+      if (user) {
+        // In a real app, you'd verify the password here.
+        console.log('Logging in with:', { email: trimmedEmail });
+        onLogin(mockProfile);
+      } else {
+        setError("No account found with this email. Please sign up.");
+      }
     } else {
+      // --- SIGN UP LOGIC ---
       if (password !== confirmPassword) {
         setError("Passwords do not match.");
         return;
       }
-      console.log('Signing up with:', { email, password });
-      onLogin();
+      if (addUser(trimmedEmail)) {
+        console.log('Signing up and logging in with:', { email: trimmedEmail });
+        onLogin(mockProfile);
+      } else {
+        setError("An account with this email already exists. Please sign in.");
+      }
     }
   };
 
   const googleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      console.log('Google login successful:', tokenResponse);
-      // In a real app, you would send this token to your backend for verification
-      // and to create a session for the user.
-      onLogin();
+    onSuccess: async (tokenResponse) => {
+      try {
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+        });
+        const userInfo = await userInfoResponse.json();
+        const userProfile: UserProfile = {
+            name: userInfo.name || 'Anonymous',
+            email: userInfo.email || '',
+            picture: userInfo.picture || '',
+        };
+        onLogin(userProfile);
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+        setError('Failed to fetch your Google profile information. Please try again.');
+      }
     },
     onError: () => {
       console.error('Google login failed.');
@@ -56,11 +130,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const toggleForm = () => {
     setIsLogin(!isLogin);
     setError('');
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-8 w-full max-w-md animate-fade-in-up flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <div className="bg-gray-800/50 p-8 rounded-xl shadow-lg border border-gray-700 w-full">
+    <div className="container mx-auto p-4 md:p-8 w-full max-w-md flex-grow flex items-center justify-center">
+      <div className="bg-gray-800/50 p-8 rounded-xl shadow-lg border border-gray-700 w-full animate-fade-in-up">
         <h1 className="text-3xl font-bold text-white text-center mb-2">
           {isLogin ? 'Welcome Back' : 'Create an Account'}
         </h1>
@@ -103,6 +180,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
               className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary transition text-gray-200 placeholder-gray-400"
               placeholder="••••••••"
             />
@@ -116,12 +194,12 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className={`w-full p-3 bg-gray-700 border rounded-md shadow-sm focus:ring-primary focus:border-primary transition text-gray-200 placeholder-gray-400 ${error ? 'border-red-500' : 'border-gray-600'}`}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md shadow-sm focus:ring-primary focus:border-primary transition text-gray-200 placeholder-gray-400"
                 placeholder="••••••••"
               />
-              {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
             </div>
           )}
+           {error && <p className="text-sm text-red-400">{error}</p>}
           <button
             type="submit"
             className="w-full bg-primary text-white font-bold py-3 px-4 rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-primary transition-all duration-300"

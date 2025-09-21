@@ -11,14 +11,16 @@ import { MentorshipPage } from './pages/MentorshipPage';
 import { HelpPage } from './pages/HelpPage';
 import { NewsletterPage } from './pages/NewsletterPage';
 import AuthPage from './pages/AuthPage';
+import type { UserProfile } from './types';
 
 export type Page = 'landing' | 'advisor' | 'resume' | 'practice' | 'community' | 'mentorship' | 'profile' | 'help' | 'newsletter' | 'auth';
 
 const App: React.FC = () => {
   const [page, setPage] = useState<Page>('landing');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const pagesRequiringAuth: Page[] = ['advisor', 'resume', 'practice', 'community', 'mentorship', 'profile'];
+  const isLoggedIn = !!userProfile;
 
   const handleNavigate = (newPage: Page) => {
     if (pagesRequiringAuth.includes(newPage) && !isLoggedIn) {
@@ -29,13 +31,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
+  const handleLogin = (profile: UserProfile) => {
+    setUserProfile(profile);
     setPage('advisor');
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    setUserProfile(null);
     setPage('landing');
   };
 
@@ -50,7 +52,7 @@ const App: React.FC = () => {
       case 'advisor':
         return <AdvisorPage />;
       case 'resume':
-        return <ResumeBuilderPage />;
+        return <ResumeBuilderPage user={userProfile} />;
       case 'practice':
         return <PracticePage />;
       case 'community':
@@ -58,7 +60,7 @@ const App: React.FC = () => {
       case 'mentorship':
         return <MentorshipPage />;
       case 'profile':
-        return <ProfilePage onLogout={handleLogout} />;
+        return <ProfilePage user={userProfile} onLogout={handleLogout} />;
       case 'help':
         return <HelpPage />;
       case 'newsletter':
@@ -72,7 +74,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 text-gray-100 font-sans antialiased">
-      <Header page={page} onNavigate={handleNavigate} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      <Header page={page} onNavigate={handleNavigate} user={userProfile} onLogout={handleLogout} />
       <main className="flex-grow flex flex-col items-center w-full">
         {renderPage()}
       </main>

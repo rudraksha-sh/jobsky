@@ -15,7 +15,13 @@ const ResourceIcon = () => (
     </svg>
 );
 
-export const CareerCard: React.FC<{ suggestion: CareerSuggestion }> = ({ suggestion }) => {
+interface CareerCardProps {
+    suggestion: CareerSuggestion;
+    completedSteps: Record<string, boolean>;
+    onToggleStep: (stepId: string) => void;
+}
+
+export const CareerCard: React.FC<CareerCardProps> = ({ suggestion, completedSteps, onToggleStep }) => {
     return (
         <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700 shadow-lg transform hover:-translate-y-1 transition-transform duration-300">
             <h3 className="text-2xl font-bold text-primary-400 mb-4">{suggestion.career}</h3>
@@ -42,24 +48,41 @@ export const CareerCard: React.FC<{ suggestion: CareerSuggestion }> = ({ suggest
                 <div>
                     <h4 className="font-semibold text-white mb-3">Your Personalized Roadmap</h4>
                     <ol className="relative border-l border-gray-600 space-y-6 ml-2">
-                        {suggestion.roadmap.map((step, index) => (
-                            <li key={index} className="ml-6">
-                                <span className="absolute flex items-center justify-center w-6 h-6 bg-primary-900 rounded-full -left-3 ring-8 ring-gray-800 text-primary-300">
-                                    {index + 1}
-                                </span>
-                                <div className="p-4 bg-gray-900 rounded-lg border border-gray-700">
-                                    <h5 className="font-semibold text-white mb-2">{step.step}</h5>
-                                    <ul className="text-sm text-gray-400 space-y-2">
-                                        {step.resources.map(resource => (
-                                            <li key={resource} className="flex items-start">
-                                                <ResourceIcon />
-                                                <span>{resource}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </li>
-                        ))}
+                        {suggestion.roadmap.map((step, index) => {
+                            const stepId = `${suggestion.career}-${step.step}`;
+                            const isCompleted = completedSteps[stepId] || false;
+
+                            return (
+                                <li key={index} className="ml-6">
+                                    <span className="absolute flex items-center justify-center w-6 h-6 bg-primary-900 rounded-full -left-3 ring-8 ring-gray-800 text-primary-300">
+                                        {index + 1}
+                                    </span>
+                                    <div className="p-4 bg-gray-900 rounded-lg border border-gray-700">
+                                        <div className="flex items-start">
+                                            <input
+                                                type="checkbox"
+                                                id={stepId}
+                                                checked={isCompleted}
+                                                onChange={() => onToggleStep(stepId)}
+                                                aria-label={`Mark step as complete: ${step.step}`}
+                                                className="h-5 w-5 rounded bg-gray-700 border-gray-600 text-primary-500 focus:ring-2 focus:ring-primary-500 cursor-pointer mr-4 mt-1 flex-shrink-0"
+                                            />
+                                            <label htmlFor={stepId} className="flex-1 cursor-pointer">
+                                                <h5 className={`font-semibold text-white mb-2 transition-colors ${isCompleted ? 'line-through text-gray-500' : ''}`}>{step.step}</h5>
+                                                <ul className={`text-sm text-gray-400 space-y-2 transition-colors ${isCompleted ? 'text-gray-600' : ''}`}>
+                                                    {step.resources.map(resource => (
+                                                        <li key={resource} className="flex items-start">
+                                                            <ResourceIcon />
+                                                            <span>{resource}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </li>
+                            );
+                        })}
                     </ol>
                 </div>
             </div>

@@ -1,6 +1,8 @@
 import React from 'react';
+import type { UserProfile } from '../types';
 
 interface ProfilePageProps {
+  user: UserProfile | null;
   onLogout: () => void;
 }
 
@@ -11,13 +13,15 @@ const UserIcon = () => (
 );
 
 
-export const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
-  // Mock user data since we don't have a backend
-  const user = {
-    name: 'Alex Doe',
-    email: 'alex.doe@example.com',
-    avatar: <UserIcon />,
-  };
+export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onLogout }) => {
+  if (!user) {
+    // This should ideally not be reached if routing is correct, but it's a good safeguard.
+    return (
+      <div className="container mx-auto p-4 md:p-8 w-full max-w-2xl text-center">
+        <p className="text-white">Loading profile...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-8 w-full max-w-2xl animate-fade-in-up">
@@ -30,8 +34,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
 
       <div className="bg-gray-800/50 p-8 rounded-xl shadow-lg border border-gray-700 w-full text-center">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mb-4">
-            {user.avatar}
+          <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mb-4 overflow-hidden">
+            {user.picture ? (
+              <img src={user.picture} alt="User Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <UserIcon />
+            )}
           </div>
           <h2 className="text-2xl font-bold text-white">{user.name}</h2>
           <p className="text-gray-400">{user.email}</p>
