@@ -1,5 +1,5 @@
 {
   "name": "JOBSKY",
-  "description": "JOBSKY is an AI-powered platform that helps you discover personalized career paths, build job-ready resumes, and connect with a community of professionals.",
+  "description": "JOBSKY is an AI career copilot powered by Google Gemini. Describe your skills and interests to receive a personalized plan featuring tailored career suggestions, detailed step-by-step roadmaps with learning resources, and a skills analysis. The platform is designed to expand with features like a Resume Builder, Interview Practice, and a Community Hub.",
   "requestFramePermissions": []
 }
