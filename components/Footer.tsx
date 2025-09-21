@@ -16,7 +16,7 @@ export const Footer: React.FC<FooterProps> = ({ page }) => {
                 </p>
                 {generationPages.includes(page) && (
                   <p className="mt-2 text-gray-500">
-                    This Project is Made by 3-idiots of this Era!
+                    Career intelligence powered by Google Gemini.
                   </p>
                 )}
             </div>

@@ -1,20 +1,19 @@
+// FIX: Replaced placeholder content with a standard React 18 entry point.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import App from './App';
 
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
-}
+const root = ReactDOM.createRoot(
+  document.getElementById('root') as HTMLElement
+);
 
-// The Client ID provided by the user.
-const googleClientId = "455952654400-po5kkrvtkfk8ccbra02corfqdkdrpa17.apps.googleusercontent.com";
+// This Client ID must match the one used in your backend configuration (server.js).
+const GOOGLE_CLIENT_ID = "455952654400-po5kkrvtkfk8ccbra02corfqdkdrpa17.apps.googleusercontent.com";
 
-const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <GoogleOAuthProvider clientId={googleClientId}>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <App />
     </GoogleOAuthProvider>
   </React.StrictMode>

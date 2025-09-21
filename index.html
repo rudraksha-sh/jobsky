@@ -73,9 +73,58 @@
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
+        /* Resume Builder Styles */
+        .resume-preview {
+          background: white;
+          color: #333;
+          font-family: 'Times New Roman', Times, serif;
+          padding: 2.5cm;
+          box-shadow: 0 0 10px rgba(0,0,0,0.5);
+          margin: 0 auto;
+        }
+        .resume-preview.a4 {
+          width: 210mm;
+          min-height: 297mm;
+        }
+        .resume-preview.letter {
+          width: 8.5in;
+          min-height: 11in;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body > *:not(.printable-resume) {
+                display: none !important;
+            }
+            .printable-resume {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            .resume-preview {
+                box-shadow: none;
+                margin: 0;
+                padding: 1.5cm;
+                border: none;
+            }
+            /* Ensure A4 and Letter sizes are respected by the printer */
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            .resume-preview.letter {
+                @page {
+                    size: Letter;
+                }
+            }
+        }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script type="importmap">
       {
         "imports": {

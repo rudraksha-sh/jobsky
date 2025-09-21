@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { CareerAdvisorResponse, ResumeBuilderResponse } from '../types';
+import type { CareerAdvisorResponse } from '../types';
 
 // FIX: Initialize the GoogleGenAI client as per the guidelines.
 const apiKey = process.env.API_KEY;
@@ -9,7 +9,7 @@ if (!apiKey) {
 const ai = new GoogleGenAI({ apiKey });
 
 // FIX: Define the response schema to ensure structured JSON output from the Gemini API.
-const careerAdvisorSchema = {
+const responseSchema = {
     type: Type.OBJECT,
     properties: {
         skills_detected: {
@@ -68,28 +68,6 @@ const careerAdvisorSchema = {
     required: ["skills_detected", "career_suggestions", "extra_recommendations", "language_used"]
 };
 
-const resumeBuilderSchema = {
-    type: Type.OBJECT,
-    properties: {
-        summary: {
-            type: Type.STRING,
-            description: "A 2-4 sentence professional summary tailored to the job description."
-        },
-        experience: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "A list of 4-6 bullet points rewriting the user's experience to highlight accomplishments and match the job description. Use strong action verbs."
-        },
-        skills: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "A list of 8-12 key skills relevant to the job, derived from both the job description and user's experience."
-        }
-    },
-    required: ["summary", "experience", "skills"]
-};
-
-
 // FIX: Implement the function to call the Gemini API for career advice.
 export const getCareerAdvice = async (userInput: string): Promise<CareerAdvisorResponse> => {
     
@@ -115,7 +93,7 @@ export const getCareerAdvice = async (userInput: string): Promise<CareerAdvisorR
             config: {
                 systemInstruction,
                 responseMimeType: "application/json",
-                responseSchema: careerAdvisorSchema,
+                responseSchema: responseSchema,
                 temperature: 0.5,
             }
         });
@@ -137,45 +115,3 @@ export const getCareerAdvice = async (userInput: string): Promise<CareerAdvisorR
         throw new Error("An unknown error occurred while fetching career advice.");
     }
 };
-
-export const getResumeAdvice = async (jobDescription: string, userExperience: string): Promise<ResumeBuilderResponse> => {
-    const systemInstruction = `You are "Jobsky", an expert AI resume writer and career coach. Your task is to rewrite and tailor a user's resume content to perfectly match a specific job description.
-
-    Instructions:
-    1.  **Analyze the Job Description:** Identify the key skills, qualifications, and responsibilities the employer is looking for.
-    2.  **Analyze User's Experience:** Understand the user's background, skills, and accomplishments from the provided text.
-    3.  **Craft a Professional Summary:** Write a concise, powerful 2-4 sentence professional summary that immediately highlights the user's suitability for the role described.
-    4.  **Rewrite Experience Bullet Points:** Transform the user's experience into 4-6 high-impact bullet points. Each point should start with a strong action verb and quantify achievements where possible. Directly align these points with the requirements from the job description.
-    5.  **Compile a Skills Section:** Create a list of 8-12 of the most relevant technical and soft skills for the job, combining keywords from the job description with the skills mentioned in the user's experience.
-    6.  **JSON Output:** You MUST respond with ONLY a valid JSON object that strictly adheres to the provided schema. Do not include any introductory text, markdown formatting (like \`\`\`json), or explanations outside of the JSON structure.`;
-    
-    const userPrompt = `JOB DESCRIPTION:\n${jobDescription}\n\nUSER EXPERIENCE:\n${userExperience}`;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: userPrompt,
-            config: {
-                systemInstruction,
-                responseMimeType: "application/json",
-                responseSchema: resumeBuilderSchema,
-                temperature: 0.3,
-            }
-        });
-        
-        const jsonText = response.text;
-        if (!jsonText) {
-            throw new Error("API returned an empty response.");
-        }
-
-        const parsedResponse = JSON.parse(jsonText) as ResumeBuilderResponse;
-        return parsedResponse;
-
-    } catch (error) {
-        console.error("Error calling Gemini API for resume advice:", error);
-         if (error instanceof Error) {
-            throw new Error(`Failed to get resume advice: ${error.message}`);
-        }
-        throw new Error("An unknown error occurred while fetching resume advice.");
-    }
-}

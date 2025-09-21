@@ -1,18 +1,15 @@
 import React from 'react';
 import type { Page } from '../App';
-import type { UserProfile } from '../types';
 import { Navbar } from './Navbar';
 
 interface HeaderProps {
     page: Page;
     onNavigate: (page: Page) => void;
-    user: UserProfile | null;
+    isLoggedIn: boolean;
     onLogout: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ page, onNavigate, user, onLogout }) => {
-    const isLoggedIn = !!user;
-
+export const Header: React.FC<HeaderProps> = ({ page, onNavigate, isLoggedIn, onLogout }) => {
     return (
         <header className="bg-gray-900/80 sticky top-0 z-50 backdrop-blur-sm border-b border-gray-800 w-full">
             <div className="container mx-auto px-4 md:px-8">
@@ -23,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({ page, onNavigate, user, onLogout
                     >
                         JOBSKY<span className="text-primary">.</span>
                     </div>
-                    <Navbar page={page} onNavigate={onNavigate} user={user} onLogout={onLogout} />
+                    <Navbar page={page} onNavigate={onNavigate} isLoggedIn={isLoggedIn} onLogout={onLogout} />
                 </div>
             </div>
         </header>
